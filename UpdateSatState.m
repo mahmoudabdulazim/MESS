@@ -1,5 +1,5 @@
 function []=UpdateSatState(Satellite,h)
-    States = [Satellite.nu(end);Satellite.Latitude(end);Satellite.Longitude(end);norm(Satellite.R(:,end))-6387;norm(Satellite.V(:,end))];
+    States = [Satellite.States.nu;Satellite.States.Lattitude;Satellite.States.Longitude;norm(Satellite.States.R)-6387;norm(Satellite.States.V)];
     Letter = 'YnFlLV';
     for k = 2:length(States)+1
         text = sprintf('%.1f',States(k-1));

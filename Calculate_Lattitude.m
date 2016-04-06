@@ -1,3 +1,3 @@
-function [Lattitude] = Calculate_Lattitude(AoP,nu,Longitude)
-    Lattitude = asind(sind(Longitude)*sind(AoP+nu));
+function [Lattitude] = Calculate_Lattitude(AoP,nu,i)
+    Lattitude = asind(sind(i)*sind(AoP+nu));
 end

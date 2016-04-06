@@ -4,9 +4,9 @@ T  = datetime;
 JD = juliandate(T);
 R0   = [2615;15881;3980];   V0 = [-2.767;-0.7905;4.980];
 H(1) = Satellite;
-H(1).Initialize(R0,V0,0);
-H(2) = Satellite;
-H(2).Initialize(-R0,-V0,0);
+H(1).RVCOE(R0,V0,0,'Hamada');
+% H(2) = Satellite;
+% H(2).Initialize(-R0,-V0,0);
 h  = Figure.Children(7).Children(2).Children(2);
 scatter3(h,0,0,0,500,[0 0 1],'filled')
 camproj(h,'perspective')

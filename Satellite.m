@@ -1,13 +1,17 @@
 %% Class definition of a Satellite object
 classdef Satellite < handle
+   %% Start of Properties Definitions:
    properties
+       Name              = [];
        Orbit             = struct('i',[],'AoA',[], 'AoP',[],   'e',    [],    'a',    [],    'b',    [],    'h',    [],'Type',[],'Energy',[],'Period',[],'p',[],'ra',[],'rp',[]);
        States            = struct('R',[],'V',  [], 'nu', [],'Altitude',[],'Longitude',[],'Lattitude',[],    't',    [],'Fpa' ,[]);
        InitialConditions = struct('R',[],'V',  [], 't0', [],'nu0',[],   'M0'   ,[],   'E0',   []);
    end
-   
+   %% Ending of Properties Definitions.
+   %% Start of Method Defnitions:
    methods
-       function [Satellite] = Initialize(Satellite,R0,V0,t0)
+       function [Satellite] = RVCOE(Satellite,R0,V0,t0,Name)
+           Satellite.Name = Name;
            %% Calculation of Characteristic Orbit Parameters
            Satellite.InitialConditions.t0 = t0;               r0 = norm(R0);      
            H = cross(R0,V0);                v0  = norm(V0);               
@@ -17,12 +21,58 @@ classdef Satellite < handle
            Satellite.Orbit.e = norm(E);
            
            %% Orbit Type Determination
+           Satellite.Categorize();
+           %%   Calculation of Classical Orbital Elements
+           Satellite.InitialConditions.R    = R0;
+           Satellite.InitialConditions.V    = V0;
+           [AoA,i,AoP,nu]                   = COE(Satellite.Orbit.Type,R0,V0,E);
+           Satellite.Orbit.AoA              = AoA;
+           Satellite.Orbit.AoP              = AoP;
+           Satellite.Orbit.i                = i;
+           Satellite.InitialConditions.nu0  = nu;
+           Satellite.InitialConditions.E0   = Calculate_E0(Satellite.Orbit.e,Satellite.InitialConditions.nu0);
+           Satellite.InitialConditions.M0   = Calculate_M0(Satellite.InitialConditions.E0,Satellite.Orbit.e);
+           Satellite.States.nu              = nu;
+           Satellite.States.M               = Satellite.InitialConditions.M0;
+           Satellite.States.E               = Satellite.InitialConditions.E0;
+           Satellite.Characterize();
+           Satellite.update(t0,0);
+       end
+       
+       function [Satellite] = Characterize(Satellite)
+           switch Satellite.Orbit.Type
+               
+               case 'Elliptic'
+                   Satellite.Orbit.n                = sqrt(mu./Satellite.Orbit.a.^3);
+                   Satellite.Orbit.rp               = Satellite.Orbit.p/(1+Satellite.Orbit.e);
+                   Satellite.Orbit.ra               = Satellite.Orbit.p/(1-Satellite.Orbit.e);
+                   Satellite.Orbit.Period           = 2*pi()/Satellite.Orbit.n;
+               case 'Circular'
+                   Satellite.Orbit.n                = sqrt(mu./Satellite.Orbit.a.^3);
+                   Satellite.Orbit.rp               = NaN;
+                   Satellite.Orbit.ra               = NaN;
+                   Satellite.Orbit.Period           = 2*pi()/Satellite.Orbit.n;
+               case 'Hyperbolic'
+                   Satellite.Orbit.n                = sqrt(mu./-Satellite.Orbit.a.^3);
+                   Satellite.Orbit.rp               = Satellite.Orbit.p/(1+Satellite.Orbit.e);
+                   Satellite.Orbit.ra               = Inf;
+                   Satellite.Orbit.Period           = Inf;
+               case 'Parabolic'
+                   Satellite.Orbit.n                = 2 * sqrt(mu./Satellite.Orbit.p.^3);
+                   Satellite.Orbit.rp               = Satellite.Orbit.p/2;
+                   Satellite.Orbit.ra               = Inf;
+                   Satellite.Orbit.Period           = Inf;
+           end
+       end
+       
+       function [Satellite] = Categorize(Satellite)
+           
            if (Satellite.Orbit.e ~= 1)
                Satellite.Orbit.a        = -mu/(2*Satellite.Orbit.Energy);
                Satellite.Orbit.p        = Satellite.Orbit.h^2./mu;
                if Satellite.Orbit.e > 1
                   Satellite.Orbit.Type = 'Hyperbolic';
-                  Satellite.Orbit.b    = NaN;
+                  Satellite.Orbit.b    = Satellite.Orbit.a*sqrt(Satellite.Orbit.e^2 - 1);
                else
                    Satellite.Orbit.b   = Satellite.Orbit.a*sqrt(1-Satellite.Orbit.e^2);
                    if Satellite.Orbit.e > 0
@@ -35,24 +85,8 @@ classdef Satellite < handle
                Satellite.Orbit.a        = Inf;
                Satellite.Orbit.b        = Inf;
                Satellite.Orbit.p        = Satellite.Orbit.h^2/mu;
-               Satellite.Orbit.ra       = Inf;
-               Satellite.Orbit.rp       = Satellite.Orbit.p/2;
                Satellite.Orbit.Type     = 'Parabolic';
            end
-           %%   Calculation of Classical Orbital Elements
-           Satellite.InitialConditions.R    = R0;
-           Satellite.InitialConditions.V    = V0;
-           [AoA,i,AoP,nu]                   = COE(Satellite.Orbit.Type,R0,V0,E);
-           Satellite.Orbit.AoA              = AoA;
-           Satellite.Orbit.AoP              = AoP;
-           Satellite.Orbit.i                = i;
-           Satellite.InitialConditions.nu0  = nu;
-           Satellite.InitialConditions.E0   = Calculate_E0(Satellite.Orbit.e,Satellite.InitialConditions.nu0);
-           Satellite.InitialConditions.M0   = Calculate_M0(Satellite.InitialConditions.E0,Satellite.Orbit.e);
-           Satellite.Orbit.n                = sqrt(mu./Satellite.Orbit.a.^3);
-           Satellite.Orbit.rp               = Satellite.Orbit.p/(1+Satellite.Orbit.e);
-           Satellite.Orbit.ra               = Satellite.Orbit.p/(1-Satellite.Orbit.e);
-           Satellite.Orbit.Period           = 2*pi()/Satellite.Orbit.n;
        end
        
        function [Satellite] = update(Satellite,T,lamda0)
@@ -75,5 +109,8 @@ classdef Satellite < handle
                 UpdateSatState(Satellite,Figure.Children(7).Children(2).Children(1).Children)
            end
        end
+       
    end
+   %% End of Method definitions
 end
+%% End of Class Definiton

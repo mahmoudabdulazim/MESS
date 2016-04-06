@@ -5,4 +5,7 @@ function [Longitude] = Calculate_Longitude(R,phi,lamda0,k)
         Sigma = 360 - Sigma;
     end
     Longitude = Sigma - lamda0;
+    if Longitude < 0
+       Longitude = Longitude + 360; 
+    end
 end

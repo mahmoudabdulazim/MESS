@@ -18,15 +18,26 @@ function varargout = MESS(varargin)
     end
     
 function MESS_OpeningFcn(hObject, eventdata, handles, varargin)
-
-    handles.output = hObject;
-    handles.Time   = 0;
+    handles.tgroup = uitabgroup('Parent', handles.SATInitializationPanel,'TabLocation', 'top');
+    handles.RVCOE  = uitab('Parent', handles.tgroup, 'Title', 'R and V');
+    handles.COERV  = uitab('Parent', handles.tgroup, 'Title', 'Orbit Design');
+    handles.RTRT   = uitab('Parent', handles.tgroup, 'Title', 'Two Positions Observation ');
+    set(handles.InitialConditions,'Parent',handles.RVCOE);
+    set(handles.AddSAT,'Parent',handles.RVCOE);
+    set(handles.SATName,'Parent',handles.RVCOE);
+    set(handles.SAT_Name,'Parent',handles.RVCOE);
+    handles.output      = hObject;
+    handles.Time        =  0;
+    handles.MaxSatNum   =  3;
+    handles.Satellites  = [];
+    handles.Index       = get(handles.SATList,'Value');
+    
     guidata(hObject, handles);
 
 function varargout = MESS_OutputFcn(hObject, eventdata, handles) 
 
     varargout{1} = handles.output;
-
+    varargout{2} = handles;
 
 function Save_Callback(hObject, eventdata, handles)
 
@@ -39,9 +50,23 @@ function Start_Callback(hObject, eventdata, handles)
 function Pause_Callback(hObject, eventdata, handles)
 
 function RemoveSAT_Callback(hObject, eventdata, handles)
+    
+    if isempty(handles.Satellites)
+        set(handles.SATList,'Enable','off');
+    else
+        index = get(handles.SATList,'Value');
+        if (index > 0)
+            handles.Satellites(index) = [];
+            RemovefromListbox(handles.SATList,index);    
+        end
+    end
+    guidata(hObject,handles);
 
 function SATList_Callback(hObject, eventdata, handles)
-
+    
+    handles.Index = get(hObject,'Value');
+    guidata(hObject,handles);
+    
 function DestinationMajorAxis_Callback(hObject, eventdata, handles)
 
 function TransferTime_Callback(hObject, eventdata, handles)
@@ -51,7 +76,23 @@ function DestinationEccentricity_Callback(hObject, eventdata, handles)
 function Transfer_Callback(hObject, eventdata, handles)
 
 function AddSAT_Callback(hObject, eventdata, handles)
+   % Initialization Data from Initial Conditions Panel
+    R0                 = [str2double(get(handles.Rx,'String'));str2double(get(handles.Ry,'String'));str2double(get(handles.Rz,'String'))];
+    V0                 = [str2double(get(handles.Vx,'String'));str2double(get(handles.Vy,'String'));str2double(get(handles.Vz,'String'))];
+    Date               = get(handles.t0,'String');    t = datetime(Date,'InputFormat','dd-MMM-yyyy HH:mm:ss');    T0 = juliandate(t)*24*3600;
+    Name               = get(handles.SATName,'String');
+    handles.Satellites = [handles.Satellites Satellite];
+    handles.Index      = length(handles.Satellites);
 
+    if isempty(Name)
+       Name = sprintf('Untitled Sat %d',handles.Index);
+    end
+
+    handles.Satellites(handles.Index).RVCOE(R0,V0,T0,Name);
+    AddtoListbox(handles.SATList,handles.Satellites(handles.Index).Name);
+    drawOrbit(handles.Satellites(handles.Index),handles.Space3DScene);
+    guidata(hObject,handles);
+    
 function Rx_Callback(hObject, eventdata, handles)
 
 function Ry_Callback(hObject, eventdata, handles)
@@ -66,7 +107,9 @@ function Vz_Callback(hObject, eventdata, handles)
 
 function t0_Callback(hObject, eventdata, handles)
 
+function SATName_Callback(hObject, eventdata, handles)
 
+function SpaceSim_Callback(hObject, eventdata, handles)
 
 
 function SATList_CreateFcn(hObject, eventdata, handles)
@@ -131,6 +174,12 @@ end
 function t0_CreateFcn(hObject, eventdata, handles)
 
 
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function SATName_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end

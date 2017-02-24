@@ -13,7 +13,7 @@ inc = acosd(dot(K,H)/(norm(K)*norm(H)));   OMG = acosd(dot(I,N)/(norm(I)*norm(N)
 %% Direct application of formulas derived from a simplified two-body problem is then used to calculate orbital shape parameters
 E  = v^2/2 - mu/r;          h  = r*v;
 a  = -mu/(2*E);     e  = sqrt(1+2*E*h^2/mu^2);    b  = a*sqrt(1-e^2);
-rp = (1-e)*a;       ra = 2*a-rp;                p = h^2/mu;
+rp = (1-e)*a;       ra = 2*a-rp;                p = h^2/mu; %% semi-latus rectum
 %% Simulation of spacecraft motion is carried out for variation of true anomaly from 0 to 360 degrees
 r_i= zeros(size(0:0.1:360));
 v_i= zeros(size(0:0.1:360));
